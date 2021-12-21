@@ -1,7 +1,8 @@
 from aiosmb.dcerpc.v5.common.connection.smbdcefactory import SMBDCEFactory
 from aiosmb.dcerpc.v5 import wkst
 from aiosmb.wintypes.ntstatus import NTStatus
-		
+from aiosmb.commons.utils.decorators import red, rr
+
 class SMBWKST:
 	def __init__(self, connection):
 		self.connection = connection
