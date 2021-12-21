@@ -16,9 +16,9 @@ class SMBDCEFactory:
 			smb_connection = self.smb_connection, 
 			timeout = self.smb_connection.target.timeout
 		)
-		#print(str(dcerpc_target))
+		# print(str(dcerpc_target))
 		dcerpc_auth = DCERPCAuth.from_smb_gssapi(self.smb_connection.gssapi)
-		#print(str(dcerpc_auth))
+		# print(str(dcerpc_auth))
 		conn = DCERPC5Connection(dcerpc_auth, dcerpc_target)
 		
 		if dcerpc_auth.ntlm is not None:
