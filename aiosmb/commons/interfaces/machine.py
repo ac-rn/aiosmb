@@ -17,8 +17,7 @@ from aiosmb.dcerpc.v5.interfaces.remoteregistry import RRPRPC
 from aiosmb.dcerpc.v5.interfaces.rprnmgr import RPRNRPC
 from aiosmb.dcerpc.v5.interfaces.tschmgr import TSCHRPC
 from aiosmb.dcerpc.v5.interfaces.parmgr import PARRPC
-
-
+from aiosmb.dcerpc.v5.interfaces.wkstmgr import SMBWKST
 
 from aiosmb.dcerpc.v5 import tsch, scmr
 
@@ -56,6 +55,7 @@ class SMBMachine:
 			'TSCH' : TSCHRPC,
 			'PAR'  : PARRPC,
 			'SERVICEMGR' : REMSVCRPC,
+			'SMBWKST' : SMBWKST,
 		}
 
 		self.open_rpcs = {}
@@ -143,6 +143,22 @@ class SMBMachine:
 				raise err
 
 			async for username, ip_addr, err in self.named_rpcs['SRVS'].list_sessions(level = level):
+				if err is not None:
+					yield None, err
+					return
+				sess = SMBUserSession(username = username, ip_addr = ip_addr.replace('\\','').strip())
+				self.sessions.append(sess)
+				yield sess, None
+		except Exception as e:
+			yield None, e
+
+	async def priv_list_sessions(self, level = 1):
+		try:
+			_, err = await self.connect_rpc('WKST')
+			if err is not None:
+				raise err
+
+			async for username, ip_addr, err in self.named_rpcs['WKST'].list_sessions(level = level):
 				if err is not None:
 					yield None, err
 					return
