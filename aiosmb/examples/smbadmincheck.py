@@ -14,8 +14,8 @@ from aiosmb.commons.utils.univeraljson import UniversalEncoder
 from aiosmb.commons.connection.url import SMBConnectionURL
 from aiosmb.commons.interfaces.machine import SMBMachine
 from aiosmb.commons.interfaces.share import SMBShare
-from aiosmb.dcerpc.v5.interfaces.remoteregistry import RRP
-from aiosmb.dcerpc.v5.interfaces.servicemanager import SMBRemoteServieManager
+from aiosmb.dcerpc.v5.interfaces.remoteregistry import RRPRPC
+from aiosmb.dcerpc.v5.interfaces.servicemanager import REMSVCRPC
 
 from tqdm import tqdm
 
@@ -97,7 +97,9 @@ class SMBAdminEnumResult:
 class SMBAdminCheck:
 	def __init__(self, smb_url, worker_count = 100, enum_url = True, exclude_target = [], show_pbar = False, ext_result_q=None, output_type = 'str', out_file = None):
 		self.target_gens = []
-		self.smb_mgr = SMBConnectionURL(smb_url)
+		self.smb_mgr = smb_url
+		if isinstance(smb_url, str):
+			self.smb_mgr = SMBConnectionURL(smb_url)
 		self.worker_count = worker_count
 		self.task_q = None
 		self.res_q = None
@@ -127,15 +129,24 @@ class SMBAdminCheck:
 					fullpath = '\\\\%s\\%s' % (connection.target.get_hostname_or_ip(), 'ADMIN$')
 				)
 				_, err = await share.connect(connection)
-				res.share = True if err is None else False
+				if err is not None:
+					res.share = False
+					share = SMBShare(
+						name = 'admin$',
+						fullpath = '\\\\%s\\%s' % (connection.target.get_hostname_or_ip(), 'admin$')
+					)
+					_, err = await share.connect(connection)
+					res.share = True if err is None else False
+				else:
+					res.share = True
 
-				rrp = RRP(connection)
-				_, err = await rrp.connect()
+				rrp, err = await RRPRPC.from_smbconnection(connection)
+				#_, err = await rrp.connect()
 				res.registry = True if err is None else False
 
 
-				srvmgr = SMBRemoteServieManager(connection)
-				_, err = await srvmgr.connect()
+				srvmgr, err = await REMSVCRPC.from_smbconnection(connection)
+				#_, err = await srvmgr.connect()
 				res.servicemgr = True if err is None else False
 
 				await self.res_q.put(res)
@@ -280,6 +291,9 @@ class SMBAdminCheck:
 			return
 		except Exception as e:
 			logger.exception('result_processing main')
+		finally:
+			if self.ext_result_q is not None:
+				await self.ext_result_q.put(SMBAdminEnumResult(None, 'finished'))
 
 	async def terminate(self):
 		for worker in self.workers:

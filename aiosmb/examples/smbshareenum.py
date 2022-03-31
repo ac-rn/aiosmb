@@ -36,7 +36,7 @@ class EnumResultFinal:
 		self.security_descriptor_sddl = None
 		self.unc_path = None
 
-		if self.otype != 'progress':
+		if self.otype in ['dir', 'file', 'share']:
 			self.unc_path = self.obj.unc_path
 			if self.otype == 'dir' or self.otype == 'file' or self.otype == 'share':
 				if self.otype == 'dir' or self.otype == 'file':
@@ -98,7 +98,9 @@ class EnumResultFinal:
 class SMBFileEnum:
 	def __init__(self, smb_url, worker_count = 10, depth = 3, enum_url = False, out_file = None, show_pbar = True, max_items = None, max_runtime = None, fetch_share_sd = False, fetch_dir_sd = False, fetch_file_sd = False, task_q = None, res_q = None, output_type = 'str', exclude_share = [], exclude_dir = [], exclude_target = [], ext_result_q = None):
 		self.target_gens = []
-		self.smb_mgr = SMBConnectionURL(smb_url)
+		self.smb_mgr = smb_url
+		if isinstance(smb_url, str):
+			self.smb_mgr = SMBConnectionURL(smb_url)
 		self.worker_count = worker_count
 		self.task_q = task_q
 		self.res_q = res_q
@@ -312,9 +314,6 @@ class SMBFileEnum:
 		except Exception as e:
 			logger.exception('result_processing')
 			asyncio.create_task(self.terminate())
-		finally:
-			if self.ext_result_q is not None:
-				await self.ext_result_q.put(EnumResultFinal(None, 'finished', None, None, None))
 
 	async def terminate(self):
 		for worker in self.workers:
@@ -354,7 +353,9 @@ class SMBFileEnum:
 				self.__total_targets += 1
 				await self.task_q.put((uid, target))
 				await asyncio.sleep(0)
-
+		
+		for _ in range(self.worker_count):
+			await self.task_q.put(None)
 		self.__gens_finished = True
 	
 	async def run(self):
@@ -371,6 +372,9 @@ class SMBFileEnum:
 		except Exception as e:
 			logger.exception('run')
 			return None, e
+		finally:
+			if self.ext_result_q is not None:
+				await self.ext_result_q.put(EnumResultFinal(None, 'finished', None, None, None))
 
 async def amain():
 	import argparse
@@ -403,8 +407,8 @@ Output legend:
 	parser.add_argument('--filesd', action='store_true', help='Fetch file security descriptor')
 	parser.add_argument('--json', action='store_true', help='Output in JSON format')
 	parser.add_argument('--tsv', action='store_true', help='Output in TSV format. (TAB Separated Values)')
-	parser.add_argument('--es', '--exclude-share', nargs='*', help = 'Exclude shares with name specified')
-	parser.add_argument('--ed', '--exclude-dir', nargs='*', help = 'Exclude directories with name specified')
+	parser.add_argument('--es', '--exclude-share', action='append', help = 'Exclude shares with name specified')
+	parser.add_argument('--ed', '--exclude-dir', action='append', help = 'Exclude directories with name specified')
 	parser.add_argument('targets', nargs='*', help = 'Hostname or IP address or file with a list of targets')
 
 	args = parser.parse_args()

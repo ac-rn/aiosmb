@@ -70,7 +70,7 @@ class AuthenticatorBuilder:
 				
 			if target.hostname is None:
 				raise Exception('target must have a domain name or hostname for kerberos!')
-				
+			
 			if target.dc_ip is None:
 				raise Exception('target must have a dc_ip for kerberos!')
 			
@@ -97,6 +97,35 @@ class AuthenticatorBuilder:
 				kc = KerberosCredential.from_kirbi(filename)
 				kc.username = creds.username
 				kc.domain = creds.domain
+			
+			elif creds.secret_type == SMBCredentialsSecretType.PFX:
+				kc = KerberosCredential.from_pfx_file(creds.username, creds.secret, username = creds.altname, domain = creds.altdomain)
+				creds.username = kc.username
+				creds.domain = kc.domain
+				target.domain = kc.domain
+			
+			elif creds.secret_type == SMBCredentialsSecretType.PFXSTR:
+				kc = KerberosCredential.from_pfx_string(creds.username, creds.secret, username = creds.altname, domain = creds.altdomain)
+				creds.username = kc.username
+				creds.domain = kc.domain
+				target.domain = kc.domain
+			
+			elif creds.secret_type == SMBCredentialsSecretType.PEM:
+				kc = KerberosCredential.from_pem_file(creds.username, creds.secret, username = creds.altname, domain = creds.altdomain)
+				creds.username = kc.username
+				creds.domain = kc.domain
+				target.domain = kc.domain
+			
+			elif creds.secret_type == SMBCredentialsSecretType.CERTSTORE:
+				# username is the CN of the certificate
+				# secret is the name of the certstore, default: MY
+				certstore = creds.secret
+				if creds.secret is None:
+					certstore = 'MY'
+				kc = KerberosCredential.from_windows_certstore(creds.username, certstore, username = creds.altname, domain = creds.altdomain)
+				creds.username = kc.username
+				creds.domain = kc.domain
+				target.domain = kc.domain
 			
 			else:
 				kc = KerberosCredential()

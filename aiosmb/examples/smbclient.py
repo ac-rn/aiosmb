@@ -46,6 +46,26 @@ class SMBClient(aiocmd.PromptToolkitCmd):
 		self.shares = {} #name -> share
 		self.__current_share = None
 		self.__current_directory = None
+	
+	async def do_coninfo(self):
+		try:
+			from aiosmb._version import __version__ as smbver
+			from asysocks._version import __version__ as socksver
+			from minikerberos._version import __version__ as kerbver
+			from winsspi._version import __version__ as winsspiver
+			from winacl._version import __version__ as winaclver
+
+			print(self.conn_url)
+			print('AIOSMB: %s' % smbver)
+			print('ASYSOCKS: %s' % socksver)
+			print('MINIKERBEROS: %s' % kerbver)
+			print('WINSSPI: %s' % winsspiver)
+			print('WINACL: %s' % winaclver)
+			return True, None
+		
+		except Exception as e:
+			traceback.print_exc()
+			return None, e
 
 	async def do_login(self, url = None):
 		"""Connects to the remote machine"""
@@ -527,10 +547,13 @@ class SMBClient(aiocmd.PromptToolkitCmd):
 			traceback.print_exc()
 			return None, e
 	
-	async def do_servicecmdexec(self, command):
+	async def do_servicecmdexec(self, command, timeout = 1):
 		"""Executes a shell command as a service and returns the result"""
 		try:
 			buffer = b''
+			if timeout is None or timeout == '':
+				timeout = 1
+			timeout = int(timeout)
 			async for data, err in self.machine.service_cmd_exec(command):
 				if err is not None:
 					raise err
@@ -785,6 +808,8 @@ class SMBClient(aiocmd.PromptToolkitCmd):
 			async for secret, err in self.machine.dcsync(target_users=users):
 				if err is not None:
 					raise err
+				if secret is None:
+					continue
 				print(str(secret))
 			
 			return True, None
@@ -954,10 +979,26 @@ class SMBClient(aiocmd.PromptToolkitCmd):
 			return None, e
 
 
-	async def do_taskcmdexec(self, command):
+	async def do_taskcmdexec(self, command, timeout = 1):
 		""" Executes a shell command using the scheduled tasks service"""
 		try:
-			await self.machine.tasks_execute_commands([command])
+			buffer = b''
+			if timeout is None or timeout == '':
+				timeout = 1
+			timeout = int(timeout)
+			async for data, err in self.machine.tasks_cmd_exec(command, timeout):
+				if err is not None:
+					raise err
+				if data is None:
+					break
+				
+				try:
+					print(data.decode())
+				except:
+					print(data)
+			return True, None
+			
+			#await self.machine.tasks_execute_commands([command])
 		except SMBException as e:
 			logger.debug(traceback.format_exc())
 			print(e.pprint())
@@ -1128,6 +1169,7 @@ def main():
 	import argparse
 	import platform
 	import logging
+	from asysocks import logger as asylogger
 	
 	parser = argparse.ArgumentParser(description='Interactive SMB client')
 	parser.add_argument('-v', '--verbose', action='count', default=0)
@@ -1147,6 +1189,7 @@ def main():
 		print('setting deepdebug')
 		logger.setLevel(1) #enabling deep debug
 		sockslogger.setLevel(1)
+		asylogger.setLevel(1)
 		asyncio.get_event_loop().set_debug(True)
 		logging.basicConfig(level=logging.DEBUG)
 

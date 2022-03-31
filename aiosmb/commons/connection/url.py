@@ -9,12 +9,15 @@ from aiosmb.connection import SMBConnection
 from getpass import getpass
 import base64
 import ipaddress
+import copy
 
 
 class SMBConnectionURL:
-	def __init__(self, connection_url):
+	def __init__(self, connection_url, credential:SMBCredential = None, target:SMBTarget = None):
 		self.connection_url = connection_url
-		
+		self.credential = credential
+		self.target = target
+
 		#credential
 		self.authentication_protocol = None
 		self.secret_type = None
@@ -22,6 +25,8 @@ class SMBConnectionURL:
 		self.username = None
 		self.secret = None
 		self.is_anonymous = None
+		self.altname = None
+		self.altdomain = None
 		self.auth_settings = {}
 
 		#target
@@ -40,7 +45,8 @@ class SMBConnectionURL:
 		#proxy
 		self.proxy= None
 
-		self.parse()
+		if self.connection_url is not None:
+			self.parse()
 
 	def get_connection(self):
 		credential = self.get_credential()
@@ -70,9 +76,13 @@ class SMBConnectionURL:
 		return SMBFile.from_smburl(self)
 
 	def get_proxy(self):
+		if self.target is not None:
+			return copy.deepcopy(self.target.proxy)
 		return self.proxy
 
 	def get_target(self):
+		if self.target is not None:
+			return copy.deepcopy(self.target)
 		if self.ip is not None and self.hostname is None:
 			try:
 				ipaddress.ip_address(self.ip)
@@ -113,6 +123,8 @@ class SMBConnectionURL:
 		return t
 
 	def get_credential(self):
+		if self.credential is not None:
+			return copy.deepcopy(self.credential)
 		return SMBCredential(
 			username = self.username,
 			domain = self.domain, 
@@ -120,9 +132,24 @@ class SMBConnectionURL:
 			secret_type = self.secret_type, 
 			authentication_type = self.authentication_protocol, 
 			settings = self.auth_settings,
-			target = self.ip
+			target = self.ip,
+			altname = self.altname,
+			altdomain = self.altdomain
 		)
 	
+	def __str__(self):
+		t = '==== SMBConnectionURL ====\r\n'
+		for k in self.__dict__:
+			val = self.__dict__[k]
+			if isinstance(val, enum.IntFlag):
+				val = val
+			elif isinstance(val, enum.Enum):
+				val = val.name
+			
+			t += '%s: %s\r\n' % (k, str(val))
+			
+		return t
+
 
 	def scheme_decoder(self, scheme):
 		#print('SCHEME: %s' % scheme)
@@ -270,6 +297,10 @@ class SMBConnectionURL:
 					self.server_ip = query[k][0]
 				elif k == 'fragment':
 					self.fragment = int(query[k][0])
+				elif k == 'altname':
+					self.altname = query[k][0]
+				elif k == 'altdomain':
+					self.altdomain = query[k][0]
 				elif k == 'dns':
 					self.dns = query[k] #multiple dns can be set, so not trimming here
 				elif k == 'compress':

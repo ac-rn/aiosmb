@@ -73,9 +73,11 @@ class EnumResultFinal:
 
 
 class SMBSessionEnum:
-	def __init__(self, smb_url, worker_count = 10, enum_url = False, out_file = None, show_pbar = True, max_items = None, max_runtime = None, task_q = None, res_q = None, output_type = 'str', ext_result_q = None):
+	def __init__(self, smb_url:SMBConnectionURL, worker_count = 10, enum_url = False, out_file = None, show_pbar = True, max_runtime = None, task_q = None, res_q = None, output_type = 'str', ext_result_q = None):
 		self.target_gens = []
-		self.smb_mgr = SMBConnectionURL(smb_url)
+		self.smb_mgr = smb_url
+		if isinstance(smb_url, str):
+			self.smb_mgr = SMBConnectionURL(smb_url)
 		self.worker_count = worker_count
 		self.task_q = task_q
 		self.res_q = res_q
@@ -84,7 +86,6 @@ class SMBSessionEnum:
 		self.enum_url = enum_url
 		self.out_file = out_file
 		self.show_pbar = show_pbar
-		self.max_items = max_items
 		self.max_runtime = max_runtime
 		self.output_type = output_type
 		self.ext_result_q = ext_result_q
@@ -314,15 +315,13 @@ async def amain():
 
 	epilog = """
 Output legend:
-    [S] Share
-    [D] Dictionary
+    [S] Session
     [F] File
     [E] Error
-    [M] Maxed (max items limit reached for directory)
     [P] Progress (current/total)
 """
 
-	parser = argparse.ArgumentParser(description='SMB Share enumerator', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=epilog)
+	parser = argparse.ArgumentParser(description='SMB Session enumerator', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=epilog)
 	SMBConnectionParams.extend_parser(parser)
 	parser.add_argument('-v', '--verbose', action='count', default=0)
 	parser.add_argument('-w', '--smb-worker-count', type=int, default=100, help='Parallell count')

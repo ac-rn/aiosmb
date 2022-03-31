@@ -39,16 +39,17 @@ setup(
 	# long_description=open("README.txt").read(),
 	python_requires='>=3.7',
 	install_requires=[
-		'minikerberos>=0.2.14',
+		'unicrypto>=0.0.5',
+		'asysocks>=0.1.7',
+		'minikerberos>=0.2.20',
 		'winsspi>=0.0.9',
-		'asysocks>=0.1.2',
 		'prompt-toolkit>=3.0.2',
 		'winacl>=0.1.1',
 		'six',
 		'tqdm',
 		'colorama',
 		'asn1crypto',
-		'pycryptodomex',
+		'wcwidth',
 	],
 	
 	classifiers=[
@@ -64,6 +65,7 @@ setup(
 			'asmbosenum = aiosmb.examples.smbosenum:main',
 			'asmbgetfile = aiosmb.examples.smbgetfile:main',
 			'asmbadmincheck = aiosmb.examples.smbadmincheck:main',
+			'asmbcertreq = aiosmb.examples.smbcertreq:main',
 		],
 
 	}
