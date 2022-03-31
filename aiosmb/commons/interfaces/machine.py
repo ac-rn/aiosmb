@@ -55,7 +55,7 @@ class SMBMachine:
 			'TSCH' : TSCHRPC,
 			'PAR'  : PARRPC,
 			'SERVICEMGR' : REMSVCRPC,
-			'SMBWKST' : SMBWKST,
+			'WKST' : SMBWKST,
 		}
 
 		self.open_rpcs = {}
@@ -98,7 +98,7 @@ class SMBMachine:
 				#print('Tried to reopen service %s' % service_name)
 				return True, None
 			
-			if service_name in ['PAR', 'RPRN','SRVS','SAMR','RRP','TSCH', 'LSAD', 'SERVICEMGR', 'SMBWKST']: #new service interface
+			if service_name in ['PAR', 'RPRN','SRVS','SAMR','RRP','TSCH', 'LSAD', 'SERVICEMGR', 'SMBWKST', 'WKST']: #new service interface
 				self.named_rpcs[service_name], err = await self.named_rpcs_proto[service_name].from_smbconnection(self.connection, auth_level = self.force_rpc_auth)
 			else:
 				self.named_rpcs[service_name] = self.named_rpcs_proto[service_name](self.connection)
