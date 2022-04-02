@@ -3,7 +3,6 @@ from aiosmb.dcerpc.v5 import wkst
 from aiosmb.wintypes.ntstatus import NTStatus
 from aiosmb.connection import SMBConnection
 from aiosmb.dcerpc.v5.connection import DCERPC5Connection
-from aiosmb.dcerpc.v5 import wkst
 from aiosmb.dcerpc.v5.rpcrt import RPC_C_AUTHN_LEVEL_NONE, RPC_C_AUTHN_LEVEL_PKT_PRIVACY
 
 
