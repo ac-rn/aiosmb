@@ -3,14 +3,14 @@ from aiosmb.dcerpc.v5 import wkst
 from aiosmb.wintypes.ntstatus import NTStatus
 from aiosmb.connection import SMBConnection
 from aiosmb.dcerpc.v5.connection import DCERPC5Connection
-from aiosmb.dcerpc.v5 import srvs
+from aiosmb.dcerpc.v5 import wkst
 from aiosmb.dcerpc.v5.rpcrt import RPC_C_AUTHN_LEVEL_NONE, RPC_C_AUTHN_LEVEL_PKT_PRIVACY
 
 
 class SMBWKST:
 	def __init__(self):
 		self.service_pipename = r'\wkssvc'
-		self.service_uuid = srvs.MSRPC_UUID_WKST
+		self.service_uuid = wkst.MSRPC_UUID_WKST
 		self.service_manager = None
 		
 		self.dce = None
