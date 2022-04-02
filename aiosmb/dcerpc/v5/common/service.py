@@ -12,10 +12,11 @@ class SMBServiceStatus(enum.Enum):
 	UNKNOWN = 'UNKNOWN'
 
 class SMBService:
-	def __init__(self,name = None, display_name = None, status = None):
+	def __init__(self,name = None, display_name = None, status = None, owner = None):
 		self.name = name
 		self.display_name = display_name
 		self.status = status
+		self.owner = owner
 
 	def __str__(self):
-		return '%s - %s - %s' % (self.name, self.display_name, self.status.value)
+		return '%s - %s - %s - %s' % (self.name, self.display_name, self.status.value, self.owner)

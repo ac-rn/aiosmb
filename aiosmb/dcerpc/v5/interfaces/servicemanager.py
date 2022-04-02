@@ -144,7 +144,9 @@ class REMSVCRPC:
 			else:
 			   service_status = SMBServiceStatus.UNKNOWN
 
-			service = SMBService(resp[i]['lpServiceName'][:-1], resp[i]['lpDisplayName'][:-1], service_status)
+			owner = await self.get_service_owner(resp[i]['lpServiceName'][:-1])
+
+			service = SMBService(resp[i]['lpServiceName'][:-1], resp[i]['lpDisplayName'][:-1], service_status, owner)
 			yield service, None
 	
 	@red
@@ -213,6 +215,25 @@ class REMSVCRPC:
 			raise Exception('Unknown service state 0x%x - Aborting' % ans['CurrentState'])
 
 		return False, None
+
+	async def get_service_owner(self, service_name):
+		if not self.handle:
+			_, err = await self.open()
+			if err is not None:
+				return None
+
+		if service_name not in self.service_handles:
+			_, err = await self.open_service(service_name)
+			if err is not None:
+				return None
+	
+		try:
+			ans, err = await scmr.hRQueryServiceConfigW(self.dce, self.service_handles[service_name])
+			return ans['lpServiceConfig']['lpServiceStartName']
+		except:
+			pass
+
+		return None
 	
 	@red
 	async def stop_service(self, service_name):
