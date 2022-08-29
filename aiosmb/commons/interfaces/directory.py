@@ -316,8 +316,10 @@ class SMBDirectory:
 						subdir.change_time = info.ChangeTime
 						subdir.allocation_size = info.AllocationSize
 						subdir.attributes = info.FileAttributes
-						
-						yield subdir, 'dir', None
+						try:
+							yield subdir, 'dir', None
+						except:
+							pass
 						
 					else:
 						file = SMBFile()
