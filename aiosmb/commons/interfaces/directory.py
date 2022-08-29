@@ -318,8 +318,10 @@ class SMBDirectory:
 						subdir.attributes = info.FileAttributes
 						try:
 							yield subdir, 'dir', None
+						except GeneratorExit:
+							raise GeneratorExit
 						except:
-							pass
+							break
 						
 					else:
 						file = SMBFile()
@@ -340,7 +342,10 @@ class SMBDirectory:
 						file.allocation_size = info.AllocationSize
 						file.attributes = info.FileAttributes
 						yield file, 'file', None
-			
+		except GeneratorExit:
+			if file_id is not None:
+				await connection.close(self.tree_id, file_id)
+			return
 		except Exception as e:
 			yield self, 'dir', e
 			return
