@@ -1290,7 +1290,9 @@ class SMBConnection:
 		Closes the file/directory/pipe/whatever based on file_id. It will automatically remove all traces of the file handle.
 		"""
 		if self.session_closed == True or self.status == SMBConnectionStatus.CLOSED:
-			raise SMBConnectionTerminated()
+			if file_id in self.FileHandleTable:
+				del self.FileHandleTable[file_id]
+			return
 		
 		command = CLOSE_REQ()
 		command.Flags = flags
@@ -1302,8 +1304,12 @@ class SMBConnection:
 		msg = SMB2Message(header, command)
 		message_id = await self.sendSMB(msg)
 		
-
-		rply = await self.recvSMB(message_id)
+		try:
+			rply = await self.recvSMB(message_id)
+		except:
+			if file_id in self.FileHandleTable:
+				del self.FileHandleTable[file_id]
+			return
 		if rply.header.Status == NTStatus.SUCCESS:
 			if file_id in self.FileHandleTable:
 				del self.FileHandleTable[file_id]
