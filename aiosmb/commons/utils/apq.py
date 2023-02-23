@@ -42,14 +42,14 @@ class _ProcQueue(object):
 
 	async def coro_put(self, item):
 		loop = asyncio.get_event_loop()
-		return (yield from loop.run_in_executor(self._executor, self.put, item))
+		 yield from loop.run_in_executor(self._executor, self.put, item)
    
 	async def coro_get(self):
 		loop = asyncio.get_event_loop()
 		try:
-			return (yield from loop.run_in_executor(self._executor, self.get))
+			yield from loop.run_in_executor(self._executor, self.get)
 		except asyncio.CancelledError:
-			return None
+			yield None
 		
 	def cancel_join_thread(self):
 		self._cancelled_join = True
